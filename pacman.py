@@ -2,25 +2,24 @@ import pygame
 from constants import *
 
 
-sprites = [pygame.image.load('data/pacman_1.png'),
-           pygame.image.load('data/pacman_2.png'),
-           pygame.image.load('data/pacman_3.png')]
-
-
 class Pacman(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
-        self.lives = 3
+        self.lives = 0
         self.direction = (-2, 0)
         self.rotation = 'left'
         self.next_rotation = None
         self.x, self.y = x, y
-        self.image = sprites[0]
-        self.sprite = 0
-        self.animCount = 0
-        self.rect = pygame.Rect(self.x * 16 - 2, self.y * 16 - 2, 20, 20)
+        self.rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
         self.stored_direction = None
         self.cell_rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
+
+        self.sprites = [pygame.image.load('data/pacman_sprites/pacman_1.png'),
+                        pygame.image.load('data/pacman_sprites/pacman_2.png'),
+                        pygame.image.load('data/pacman_sprites/pacman_3.png')]
+        self.image = self.sprites[0]
+        self.sprite = 0
+        self.animCount = 0
 
     def change_direction(self, vx, vy):
         self.stored_direction = (vx, vy)
@@ -39,6 +38,7 @@ class Pacman(pygame.sprite.Sprite):
 
     def move(self):
         if self.can_move():
+            pygame.mixer.music.unpause()
             self.change_rotation()
             self.x = self.rect.center[0] // 16
             self.y = self.rect.center[1] // 16
@@ -62,14 +62,14 @@ class Pacman(pygame.sprite.Sprite):
             elif self.can_move():
                 self.sprite += 1
             if self.rotation == 'right':
-                self.image = sprites[self.sprite]
+                self.image = self.sprites[self.sprite]
             elif self.rotation == 'left':
-                self.image = sprites[self.sprite]
+                self.image = self.sprites[self.sprite]
                 self.image = pygame.transform.flip(self.image, 1, 0)
             elif self.rotation == 'up':
-                self.image = sprites[self.sprite]
+                self.image = self.sprites[self.sprite]
                 self.image = pygame.transform.rotate(self.image, 90)
             elif self.rotation == 'down':
-                self.image = sprites[self.sprite]
+                self.image = self.sprites[self.sprite]
                 self.image = pygame.transform.rotate(self.image, 270)
         self.animCount += 1

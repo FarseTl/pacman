@@ -2,27 +2,32 @@ import pygame
 from constants import *
 from math import sqrt
 from random import randint
-
+from time import time
 
 class Ghost(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
         self.x, self.y = x, y
+        self.start_cords = (x, y)
         self.add(enemies)
         self.target_cell = None
-        self.direction = (0, 1)
+        self.direction = (0, -1)
         self.stored_direction = None
         self.image = pygame.Surface((20, 20))
-        self.rect = pygame.Rect(self.x * 16 - 2, self.y * 16 - 2, 20, 20)
+        self.rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
         self.cell_rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
-        self.state = 'chase'
+        self.state = 'scattering'
         self.right, down, up = None, None, None
         self.rotation = 'left'
         self.sprite = 0
         self.animCount = 0
-        self.fright_blue = [pygame.image.load('data/fright_1.png'), pygame.image.load('data/fright_2.png')]
-        self.fright_white = [pygame.image.load('data/fright_3.png'), pygame.image.load('data/fright_4.png')]
+        self.fright_blue = [pygame.image.load('data/ghosts_sprites/fright_1.png'), pygame.image.load('data/ghosts_sprites/fright_2.png')]
+        self.fright_white = [pygame.image.load('data/ghosts_sprites/fright_3.png'), pygame.image.load('data/ghosts_sprites/fright_4.png')]
         self.color = None
+        self.flag = True
+        self.text_timer = None
+        self.text_pos = None
+        self.score_for_eating = None
 
     def set_target_cell(self, pacman):
         if self.state == 'frightening':
@@ -69,7 +74,7 @@ class Ghost(pygame.sprite.Sprite):
             if (self.x, self.y) in CROSSROADS_1:
                 if self.stored_direction and self.cell_rect.center == self.rect.center:
                     self.direction, self.stored_direction = self.stored_direction, None
-            elif self.x + self.direction[0] < 28:
+            elif self.x + self.direction[0] < 28 and self.y + self.direction[1] in range(3, 34):
                 if MAZE[self.y + self.direction[1]][self.x + self.direction[0]] == '#':
                     if self.cell_rect.center == self.rect.center:
                         if MAZE[self.y - 1][self.x] == '0' and self.direction[1] != 1:
@@ -126,7 +131,7 @@ class Ghost(pygame.sprite.Sprite):
 class Blinky(Ghost):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.start_cords = (x, y)
+        self.start_cords = (12, 17)
         self.right = [pygame.image.load('data/ghosts_sprites/blinky/RL1.png'),
                       pygame.image.load('data/ghosts_sprites/blinky/RL2.png')]
         self.down = [pygame.image.load('data/ghosts_sprites/blinky/D1.png'),
@@ -139,8 +144,7 @@ class Blinky(Ghost):
         if self.state == 'chase':
             self.target_cell = pacman.x, pacman.y
         elif self.state == 'scattering':
-            self.target_cell = (27, 3)
-
+            self.target_cell = (25, 0)
 
     def change_path(self, nx, ny):
         super().change_path(nx, ny)
@@ -154,11 +158,17 @@ class Blinky(Ghost):
     def change_sprite(self, flag=False):
         super().change_sprite(flag)
 
+    def set_free(self, score):
+        if self.state != 'frightening' and self.flag:
+            self.x, self.y = (13, 14)
+            self.rect = pygame.Rect(self.x * 16 - 1, self.y * 16 - 2, 20, 20)
+            self.cell_rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
+            self.flag = False
+            self.direction = (1, 0)
 
 class Pinky(Ghost):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.start_cords = (x, y)
         self.right = [pygame.image.load('data/ghosts_sprites/pinky/RL1.png'),
                       pygame.image.load('data/ghosts_sprites/pinky/RL2.png')]
         self.down = [pygame.image.load('data/ghosts_sprites/pinky/D1.png'),
@@ -169,9 +179,9 @@ class Pinky(Ghost):
     def set_target_cell(self, pacman):
         super().set_target_cell(pacman)
         if self.state == 'chase':
-            self.target_cell = (pacman.x + pacman.direction[0] * 2, pacman.y + pacman.direction[1] * 2)
+            self.target_cell = (pacman.x + pacman.direction[0], pacman.y + pacman.direction[1])
         elif self.state == 'scattering':
-            self.target_cell = (0, 3)
+            self.target_cell = (2, 0)
 
     def change_path(self, nx, ny):
         super().change_path(nx, ny)
@@ -185,12 +195,18 @@ class Pinky(Ghost):
     def change_sprite(self, flag=False):
         super().change_sprite(flag)
 
+    def set_free(self, score):
+        if ((score >= 1 and self.flag) or (score > 1 and self.flag)) and self.state != 'frightening':
+            self.x, self.y = (13, 14)
+            self.rect = pygame.Rect(self.x * 16 - 4, self.y * 16 - 2, 20, 20)
+            self.cell_rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
+            self.flag = False
+            self.direction = (-1, 0)
 
 
 class Inky(Ghost):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.start_cords = (x, y)
         self.right = [pygame.image.load('data/ghosts_sprites/inky/RL1.png'),
                       pygame.image.load('data/ghosts_sprites/inky/RL2.png')]
         self.down = [pygame.image.load('data/ghosts_sprites/inky/D1.png'),
@@ -229,7 +245,7 @@ class Inky(Ghost):
                 x = 27
             self.target_cell = (x, y)
         elif self.state == 'scattering':
-            self.target_cell= (27, 33)
+            self.target_cell= (27, 35)
 
     def change_path(self, nx, ny):
         super().change_path(nx, ny)
@@ -243,10 +259,16 @@ class Inky(Ghost):
     def change_sprite(self, flag=False):
         super().change_sprite(flag)
 
+    def set_free(self, score):
+        if ((score == 30 and self.flag) or (score > 30 and self.flag)) and self.state != 'frightening':
+            self.x, self.y = (13, 14)
+            self.rect = pygame.Rect(self.x * 16 - 2, self.y * 16 - 2, 20, 20)
+            self.cell_rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
+            self.flag = False
+
 class Clyde(Ghost):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.start_cords = (x, y)
         self.right = [pygame.image.load('data/ghosts_sprites/clyde/RL1.png'),
                       pygame.image.load('data/ghosts_sprites/clyde/RL2.png')]
         self.down = [pygame.image.load('data/ghosts_sprites/clyde/D1.png'),
@@ -260,7 +282,7 @@ class Clyde(Ghost):
             self.target_cell = (pacman.x, pacman.y)
             self.state = 'chase'
         elif self.state == 'scattering':
-            self.target_cell = (0, 33)
+            self.target_cell = (0, 35)
 
     def change_path(self, nx, ny):
         super().change_path(nx, ny)
@@ -273,3 +295,11 @@ class Clyde(Ghost):
 
     def change_sprite(self, flag=False):
         super().change_sprite(flag)
+
+    def set_free(self, score):
+        if ((score == 98 and self.flag) or (score > 98 and self.flag)) and self.state != 'frightening':
+            self.x, self.y = (13, 14)
+            self.rect = pygame.Rect(self.x * 16 - 2, self.y * 16 - 2, 20, 20)
+            self.cell_rect = pygame.Rect(self.x * 16, self.y * 16, 16, 16)
+            self.direction = (-1, 0)
+            self.flag = False
