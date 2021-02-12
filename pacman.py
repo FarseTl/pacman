@@ -5,7 +5,7 @@ from constants import *
 class Pacman(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites)
-        self.lives = 0
+        self.lives = 3
         self.direction = (-2, 0)
         self.rotation = 'left'
         self.next_rotation = None
